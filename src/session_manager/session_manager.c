@@ -31,6 +31,61 @@ static int g_counter;
 static int g_current_session_id;
 rbusHandle_t   g_busHandle = 0;
 
+#ifdef __APPLE__
+#include <fcntl.h>
+int daemon_compat(int nochdir, int noclose)
+{
+    pid_t pid;
+
+    // Fork to detach from parent
+    pid = fork();
+    if(pid < 0)
+    {
+        return -1; // Fork failed
+    }
+    if(pid > 0)
+    {
+        _exit(0); // Parent exits
+    }
+
+    // Child process: create new session
+    if(setsid() < 0)
+    {
+        return -1; // Failed to detach from terminal
+    }
+
+    // Optionally change working directory to "/"
+    if(!nochdir)
+    {
+        if(chdir("/") < 0)
+        {
+            return -1;
+        }
+    }
+
+    // Optionally redirect stdin, stdout, stderr to /dev/null
+    if(!noclose)
+    {
+        int fd = open("/dev/null", O_RDWR);
+        if(fd < 0)
+        {
+            return -1;
+        }
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if(fd > 2)
+        {
+            close(fd);
+        }
+    }
+
+    return 0; // Success
+}
+#else
+#define daemon_compat daemon // Use standard daemon on non-macOS platforms
+#endif
+
 /* MethodHandler */
 static rbusError_t sessionManager_methodHandler(rbusHandle_t handle,
         char const* methodName, rbusObject_t inParams,
@@ -214,7 +269,7 @@ int main(int argc, char *argv[])
     char componentName[] = RBUS_SMGR_DESTINATION_NAME;
     if (argc == 2)
     {
-        if (-1 == daemon(0 /*chdir to "/"*/, 1 /*redirect stdout/stderr to /dev/null*/ ))
+        if (-1 == daemon_compat(0 /*chdir to "/"*/, 1 /*redirect stdout/stderr to /dev/null*/))
         {
             rtLog_Fatal("failed to fork off daemon. %s", rtStrError(errno));
             exit(1);

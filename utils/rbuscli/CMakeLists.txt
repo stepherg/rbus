@@ -23,8 +23,8 @@ include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/src/rtmessage)
 
 add_executable(rbuscli rbuscli.c)
-target_link_libraries(rbuscli rbus)
-add_dependencies(rbuscli rbus linenoise)
+target_link_libraries(rbuscli rbus ${LINENOISE_LIBRARIES})
+add_dependencies(rbuscli rbus)
 
 if (BUILD_FOR_DESKTOP)
 	target_link_libraries(rbuscli rbus -llinenoise)

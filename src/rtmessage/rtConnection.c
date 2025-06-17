@@ -85,6 +85,18 @@ typedef volatile int atomic_uint_least32_t;
 
 extern char* __progname;
 
+unsigned long long get_thread_id()
+{
+#ifdef __linux__
+    return syscall(__NR_gettid);
+#elif defined(__APPLE__)
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
+    return tid;
+#else
+    return 0; // Unsupported platform
+#endif
+}
 struct _rtListener
 {
   int                     in_use;
@@ -164,6 +176,7 @@ static int rtConnection_StartThreads(rtConnection con);
 static int rtConnection_StopThreads(rtConnection con);
 static rtError rtConnection_Read(rtConnection con, int32_t timeout);
 
+#ifdef WITH_SPAKE2
 static inline bool rtConnection_IsSecure(rtConnection con)
 {
 #ifdef WITH_SPAKE2
@@ -173,6 +186,7 @@ static inline bool rtConnection_IsSecure(rtConnection con)
   return false;
 #endif
 }
+#endif
 
 static void rtMessageInfo_Init(rtMessageInfo** pim)
 {
@@ -208,10 +222,12 @@ static void rtMessageInfo_ListItemFree(void* p)
     rtMessageInfo_Release((rtMessageInfo*)p);
 }
 
+#ifdef WITH_SPAKE2
 static inline bool rtMessageInfo_IsEncrypted(rtMessageInfo* msginfo)
 {
   return msginfo->header.flags & rtMessageFlags_Encrypted;
 }
+#endif
 
 static void onDefaultMessage(rtMessageHeader const* hdr, uint8_t const* buff, uint32_t n, void* closure)
 {
@@ -985,7 +1001,7 @@ rtConnection_SendRequestInternal(rtConnection con, uint8_t const* pReq, uint32_t
     uint32_t sequence_number;
     rtListItem listItem;
 
-    pid_t tid = syscall(__NR_gettid);
+    pid_t tid = get_thread_id();
 
     pthread_mutex_lock(&con->mutex);
 #ifdef C11_ATOMICS_SUPPORTED
@@ -1833,7 +1849,7 @@ static void * rtConnection_ReaderThread(void *data)
 {
   rtError err = RT_OK;
   rtConnection con = (rtConnection)data;
-  con->read_tid = syscall(__NR_gettid);
+  con->read_tid = get_thread_id();
   rtLog_Debug("Reader thread started");
   while (1 == GetRunThreadsSync(con))
   {

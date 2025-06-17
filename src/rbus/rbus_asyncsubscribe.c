@@ -27,6 +27,11 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#ifdef __APPLE__
+#include <sys/time.h> // For gettimeofday on macOS
+#else
+#include <time.h> // For clock_gettime on Linux
+#endif
 
 #define ERROR_CHECK(CMD) \
 { \
@@ -294,7 +299,41 @@ static void* AsyncSubscribeRetrier_threadFunc(void* data)
             int err;
 
             RBUSLOG_DEBUG("timedwait until %s", rtTime_ToString(&nextSendTime, tbuff));
- 
+
+#ifdef __APPLE__
+            // Use gettimeofday for macOS (CLOCK_REALTIME equivalent)
+            rtTime_t now;
+            rtTime_Now(&now);
+            long long delta_sec = nextSendTime.tv_sec-now.tv_sec;
+            long long delta_nsec = nextSendTime.tv_nsec-now.tv_nsec;
+            if(delta_nsec<0)
+            {
+                delta_nsec += 1000000000;
+                delta_sec--;
+            }
+            if(delta_sec<0)
+            {
+                delta_sec = 0;
+                delta_nsec = 0; // Avoid negative timeouts
+            }
+            struct timeval tv;
+            if(gettimeofday(&tv, NULL)!=0)
+            {
+                RBUSLOG_ERROR("Error getting time: %s", strerror(errno));
+                break;
+            }
+            ts.tv_sec = tv.tv_sec+delta_sec;
+            ts.tv_nsec = (tv.tv_usec*1000)+delta_nsec;
+            if(ts.tv_nsec>=1000000000)
+            {
+                ts.tv_sec++;
+                ts.tv_nsec -= 1000000000;
+            }
+#else
+            // Use rtTime_ToTimespec for Linux (assumes CLOCK_MONOTONIC)
+            rtTime_ToTimespec(&nextSendTime, &ts);
+#endif
+
             err = pthread_cond_timedwait(&gRetrier->condItemAdded,
                                          &gRetrier->mutexQueue,
                                          rtTime_ToTimespec(&nextSendTime, &ts));
@@ -326,11 +365,13 @@ static void rbusAsyncSubscribeRetrier_Create()
 
     ERROR_CHECK(pthread_mutexattr_init(&mattrib));
     ERROR_CHECK(pthread_mutexattr_settype(&mattrib, PTHREAD_MUTEX_ERRORCHECK));
-    ERROR_CHECK(pthread_mutex_init(&gRetrier->mutexQueue, &mattrib));  
+    ERROR_CHECK(pthread_mutex_init(&gRetrier->mutexQueue, &mattrib));
     ERROR_CHECK(pthread_mutexattr_destroy(&mattrib));
 
     ERROR_CHECK(pthread_condattr_init(&cattrib));
+#ifndef __APPLE__
     ERROR_CHECK(pthread_condattr_setclock(&cattrib, CLOCK_MONOTONIC));
+#endif
     ERROR_CHECK(pthread_cond_init(&gRetrier->condItemAdded, &cattrib));
     ERROR_CHECK(pthread_condattr_destroy(&cattrib));
 

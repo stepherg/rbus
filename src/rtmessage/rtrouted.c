@@ -143,6 +143,61 @@ rtRouted_PrintHelp()
   exit(0);
 }
 
+#ifdef __APPLE__
+#include <fcntl.h>
+int daemon_compat(int nochdir, int noclose)
+{
+    pid_t pid;
+
+    // Fork to detach from parent
+    pid = fork();
+    if(pid < 0)
+    {
+        return -1; // Fork failed
+    }
+    if(pid > 0)
+    {
+        _exit(0); // Parent exits
+    }
+
+    // Child process: create new session
+    if(setsid() < 0)
+    {
+        return -1; // Failed to detach from terminal
+    }
+
+    // Optionally change working directory to "/"
+    if(!nochdir)
+    {
+        if(chdir("/") < 0)
+        {
+            return -1;
+        }
+    }
+
+    // Optionally redirect stdin, stdout, stderr to /dev/null
+    if(!noclose)
+    {
+        int fd = open("/dev/null", O_RDWR);
+        if(fd < 0)
+        {
+            return -1;
+        }
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        if(fd > 2)
+        {
+            close(fd);
+        }
+    }
+
+    return 0; // Success
+}
+#else
+#define daemon_compat daemon // Use standard daemon on non-macOS platforms
+#endif
+
 static int validate_string(const char * ptr, int limit)
 {
   int i;
@@ -1871,7 +1926,7 @@ int main(int argc, char* argv[])
 
   if (!run_in_foreground)
   {
-    ret = daemon(0 /*chdir to "/"*/, 1 /*redirect stdout/stderr to /dev/null*/ );
+    ret = daemon_compat(0 /*chdir to "/"*/, 1 /*redirect stdout/stderr to /dev/null*/);
     if (ret == -1)
     {
       rtLog_Fatal("failed to fork off daemon. %s", rtStrError(errno));

@@ -31,6 +31,11 @@
 #include <rtTime.h>
 #include <rtMemory.h>
 #include <rbuscore.h>
+#ifdef __APPLE__
+#include <sys/time.h> // For gettimeofday on macOS
+#else
+#include <time.h> // For clock_gettime on Linux
+#endif
 
 #define ERROR_CHECK(CMD) \
 { \
@@ -70,7 +75,9 @@ static void init_thread(sRecord* sub_rec)
     ERROR_CHECK(pthread_mutex_init(&sub_rec->mutex, &attrib));
 
     ERROR_CHECK(pthread_condattr_init(&cattrib));
+#ifndef __APPLE__
     ERROR_CHECK(pthread_condattr_setclock(&cattrib, CLOCK_MONOTONIC));
+#endif
     ERROR_CHECK(pthread_cond_init(&sub_rec->cond, &cattrib));
     ERROR_CHECK(pthread_condattr_destroy(&cattrib));
 }
@@ -120,11 +127,33 @@ static void* PublishingThreadFunc(void* rec)
         int result = 0;
         char *tmpptr = NULL;
         rtTime_t timeout;
-        rtTimespec_t ts;
-        rtTime_Later(NULL, (sub->interval*1000), &timeout);
+        struct timespec ts;
+
+        rtTime_Later(NULL, (sub->interval * 1000), &timeout);
+
+#ifdef __APPLE__
+        // Use gettimeofday for macOS (CLOCK_REALTIME equivalent)
+        struct timeval tv;
+        if(gettimeofday(&tv, NULL) != 0)
+        {
+            RBUSLOG_ERROR("Error getting time: %s", strerror(errno));
+            break;
+        }
+        ts.tv_sec = tv.tv_sec + timeout.tv_sec;
+        ts.tv_nsec = (tv.tv_usec * 1000) + timeout.tv_nsec;
+        if(ts.tv_nsec >= 1000000000)
+        {
+            ts.tv_sec++;
+            ts.tv_nsec -= 1000000000;
+        }
+#else
+        // Use rtTime_ToTimespec for Linux (assumes CLOCK_MONOTONIC)
+        rtTime_ToTimespec(&timeout, &ts);
+#endif
+
         err = pthread_cond_timedwait(&sub_rec->cond,
-                &sub_rec->mutex,
-                rtTime_ToTimespec(&timeout, &ts));
+            &sub_rec->mutex,
+            &ts);
 
         if(err != 0 && err != ETIMEDOUT)
         {

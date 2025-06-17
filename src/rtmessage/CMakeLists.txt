@@ -86,7 +86,7 @@ add_library(
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${RDKLOGGER_INCLUDE_DIRS})
-add_dependencies(rtMessage cjson)
+#add_dependencies(rtMessage cjson)
 target_link_libraries(rtMessage -pthread ${CJSON_LIBRARIES})
 
 if (ENABLE_RDKLOGGER)

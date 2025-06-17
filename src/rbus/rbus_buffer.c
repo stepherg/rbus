@@ -21,7 +21,11 @@
 #include "rbus_log.h"
 #include <rbus_buffer.h>
 #include "rtMemory.h"
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#else
 #include <endian.h>
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,12 +33,22 @@
 #define VERIFY_NULL(T) if(NULL == T){ return; }
 #define BUFFER_BLOCK_SIZE 64
 
+#ifdef __APPLE__
+#define rbusHostToLittleInt16(n) OSSwapHostToLittleInt16(n)
+#define rbusLittleToHostInt16(n) OSSwapLittleToHostInt16(n)
+#define rbusHostToLittleInt32(n) OSSwapHostToLittleInt32(n)
+#define rbusLittleToHostInt32(n) OSSwapLittleToHostInt32(n)
+#define rbusHostToLittleInt64(n) OSSwapHostToLittleInt64(n)
+#define rbusLittleToHostInt64(n) OSSwapLittleToHostInt64(n)
+#else
 #define rbusHostToLittleInt16(n) htole16(n)
 #define rbusLittleToHostInt16(n) le16toh(n)
 #define rbusHostToLittleInt32(n) htole32(n)
 #define rbusLittleToHostInt32(n) le32toh(n)
 #define rbusHostToLittleInt64(n) htole64(n)
 #define rbusLittleToHostInt64(n) le64toh(n)
+#endif
+
 
 float rbusHostToLittleSingle(float n)
 {

@@ -2495,11 +2495,11 @@ int handle_cmds (int argc, char *argv[])
     }
     else if(matchCmd(command, 10, "create_session"))
     {
-        validate_and_execute_create_session_cmd (argc, argv);
+        validate_and_execute_create_session_cmd ();
     }
     else if(matchCmd(command, 7, "get_session"))
     {
-        validate_and_execute_get_session_cmd (argc, argv);
+        validate_and_execute_get_session_cmd ();
     }
     else if(matchCmd(command, 9, "close_session"))
     {
