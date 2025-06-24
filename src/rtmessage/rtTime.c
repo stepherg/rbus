@@ -24,20 +24,35 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <time.h>
-
+#ifdef __APPLE__
+#include <sys/time.h> // For gettimeofday on macOS
+#else
+#include <time.h> // For clock_gettime on Linux
 #define RT_CLOCK_ID CLOCK_MONOTONIC
+#endif
 
 rtTime_t* rtTime_Now(rtTime_t* t)
 {
     int rc;
 
+#ifdef __APPLE__
+    struct timeval tv;
+    rc = gettimeofday(&tv, NULL);
+    if (rc == -1) {
+       rtLog_Error("gettimeofday failed: %s", rtStrError(rtErrorFromErrno(errno)));
+    } else {
+       // Convert timeval (seconds and microseconds) to timespec (seconds and nanoseconds)
+       t->tv_sec = tv.tv_sec;
+       t->tv_nsec = tv.tv_usec * 1000; // Convert microseconds to nanoseconds
+    }
+#else    
     rc = clock_gettime(RT_CLOCK_ID, t);
 
     if(rc == -1)
     {
         rtLog_Error("clock_gettime failed: %s", rtStrError(rtErrorFromErrno(errno)));
     }
+#endif
     return t;
 }
 

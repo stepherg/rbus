@@ -238,7 +238,7 @@ int rbusFilter_Decode(rbusFilter_t* filterOut, rbusBuffer_t const buff)
 {
     uint16_t    type;
     uint16_t    length;
-    rbusFilter_t filter;
+    rbusFilter_t filter = NULL;
     rbusFilter_ExpressionType_t filterType;
     rbusFilter_RelationOperator_t relOp;
     rbusFilter_LogicOperator_t logOp;

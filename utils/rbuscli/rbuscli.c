@@ -1793,7 +1793,7 @@ void validate_and_execute_register_command (int argc, char *argv[], bool add)
         const char* stype = argv[i];
         const char* name = argv[i+1];
 
-        rbusDataElement_t elem = {(char*)name, 0, {NULL}};
+        rbusDataElement_t elem = {(char *)name, 0, {NULL,NULL,NULL,NULL,NULL,NULL}};
 
         if(strncmp(stype, "property", 4) == 0)
         {

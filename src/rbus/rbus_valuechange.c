@@ -44,11 +44,6 @@
 #include <rtVector.h>
 #include <rtTime.h>
 #include <rtMemory.h>
-#ifdef __APPLE__
-#include <sys/time.h> // For gettimeofday on macOS
-#else
-#include <time.h> // For clock_gettime on Linux
-#endif
 
 #define ERROR_CHECK(CMD) \
 { \
@@ -144,35 +139,16 @@ static void* rbusValueChange_pollingThreadFunc(void *userData)
         rtTimespec_t ts;
 
         rtTime_Later(NULL, RBUS_VALUECHANGE_PERIOD, &timeout);
-
-#ifdef __APPLE__
-        // Use gettimeofday for macOS (CLOCK_REALTIME equivalent)
-        struct timeval tv;
-        if(gettimeofday(&tv, NULL) != 0)
-        {
-            RBUSLOG_ERROR("Error getting time: %s", strerror(errno));
-            break;
-        }
-        ts.tv_sec = tv.tv_sec + timeout.tv_sec;
-        ts.tv_nsec = (tv.tv_usec * 1000) + timeout.tv_nsec;
-        if(ts.tv_nsec >= 1000000000)
-        {
-            ts.tv_sec++;
-            ts.tv_nsec -= 1000000000;
-        }
-#else
-        // Use rtTime_ToTimespec for Linux (assumes CLOCK_MONOTONIC)
-        rtTime_ToTimespec(&timeout, &ts);
-#endif
-        err = pthread_cond_timedwait(&gVC->cond,
-            &gVC->mutex,
-            &ts);
+        
+        err = pthread_cond_timedwait(&gVC->cond, 
+                                    &gVC->mutex, 
+                                    rtTime_ToTimespec(&timeout, &ts));
 
         if(err != 0 && err != ETIMEDOUT)
         {
             RBUSLOG_ERROR("Error %d:%s running command pthread_cond_timedwait", err, strerror(err));
         }
-
+        
         if(!gVC->running)
         {
             break;

@@ -25,11 +25,6 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
-#ifdef __APPLE__
-#include <sys/time.h> // For gettimeofday on macOS
-#else
-#include <time.h> // For clock_gettime on Linux
-#endif
 
 #define ERROR_CHECK(CMD) \
 { \
@@ -104,78 +99,36 @@ rtError rtSemaphore_Wait(rtSemaphore sem)
 
 rtError rtSemaphore_TimedWait(rtSemaphore sem, struct timespec* t)
 {
-    int rc = RT_OK;
-    int err;
-    struct timespec abs_timeout;
-
-    ERROR_CHECK(pthread_mutex_lock(&sem->m));
-    if(sem->v > 0)
-    {
-        sem->v--;
-        ERROR_CHECK(pthread_mutex_unlock(&sem->m));
-        return RT_OK;
-    }
-
-    if(t)
-    {
-        // Calculate absolute timeout
-#ifdef __APPLE__
-      // Use gettimeofday for macOS (CLOCK_REALTIME equivalent)
-        struct timeval tv;
-        if(gettimeofday(&tv, NULL) != 0)
-        {
-            rtLog_Error("Error getting time: %s", strerror(errno));
-            ERROR_CHECK(pthread_mutex_unlock(&sem->m));
-            return RT_ERROR;
-        }
-        abs_timeout.tv_sec = tv.tv_sec + t->tv_sec;
-        abs_timeout.tv_nsec = tv.tv_usec * 1000 + t->tv_nsec;
-        if(abs_timeout.tv_nsec >= 1000000000)
-        {
-            abs_timeout.tv_sec++;
-            abs_timeout.tv_nsec -= 1000000000;
-        }
-#else
-      // Use CLOCK_MONOTONIC for Linux
-        struct timespec now;
-        if(clock_gettime(CLOCK_MONOTONIC, &now) != 0)
-        {
-            rtLog_Error("Error getting time: %s", strerror(errno));
-            ERROR_CHECK(pthread_mutex_unlock(&sem->m));
-            return RT_ERROR;
-        }
-        abs_timeout.tv_sec = now.tv_sec + t->tv_sec;
-        abs_timeout.tv_nsec = now.tv_nsec + t->tv_nsec;
-        if(abs_timeout.tv_nsec >= 1000000000)
-        {
-            abs_timeout.tv_sec++;
-            abs_timeout.tv_nsec -= 1000000000;
-        }
-#endif
-        err = pthread_cond_timedwait(&sem->c, &sem->m, &abs_timeout);
-    }
-    else
-    {
-        err = pthread_cond_wait(&sem->c, &sem->m);
-    }
-
-    if(err == 0)
-    {
-        if(sem->v > 0)
-            sem->v--;
-    }
-    else
-    {
-        if(t && err == ETIMEDOUT)
-        {
-            rc = RT_ERROR_TIMEOUT;
-        }
-        else if(err != 0)
-        {
-            rtLog_Error("Error %d:%s running command pthread_cond_timedwait", err, strerror(err));
-            rc = RT_ERROR;
-        }
-    }
+  int rc = RT_OK;
+  int err;
+  ERROR_CHECK(pthread_mutex_lock(&sem->m));
+  if(sem->v > 0)
+  {
+    sem->v--;
     ERROR_CHECK(pthread_mutex_unlock(&sem->m));
-    return rc;
+    return RT_OK;
+  }
+  if(t)
+    err = pthread_cond_timedwait(&sem->c, &sem->m, t);
+  else
+    err = pthread_cond_wait(&sem->c, &sem->m);
+  if(err == 0)
+  {
+    if(sem->v > 0)
+      sem->v--;
+  }
+  else
+  {
+    if(t && err == ETIMEDOUT)
+    {
+      rc = RT_ERROR_TIMEOUT;
+    }
+    else if(err != 0)
+    {
+      rtLog_Error("Error %d:%s running command pthread_cond_timedwait", err, strerror(err));
+      rc = RT_ERROR;
+    }
+  }
+  ERROR_CHECK(pthread_mutex_unlock(&sem->m));
+  return rc;
 }
