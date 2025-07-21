@@ -1,0 +1,17 @@
+{
+    "cmake.configureArgs": [
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+    ],
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "newLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.block": "newLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "newLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.lambda": "newLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.type": "newLine",
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false,
+    "C_Cpp.vcFormat.newLine.scopeBracesOnSeparateLines": true,
+    "C_Cpp.vcFormat.indent.caseLabels": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": false,
+    "editor.formatOnSaveMode": "modificationsIfAvailable"
+}
