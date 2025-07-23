@@ -18,7 +18,7 @@
 # limitations under the License.
 #############################################################################
 
-cmake_minimum_required (VERSION 2.8.12)
+cmake_minimum_required (VERSION 3.10)
 
 if (POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
@@ -49,6 +49,8 @@ if(APPLE)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set(CMAKE_C_FLAGS_DEBUG " -Wno-null-pointer-arithmetic")
+  set(CMAKE_CXX_FLAGS_DEBUG " -Wno-null-pointer-arithmetic")
 endif()
 
 

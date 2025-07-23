@@ -1,6 +1,8 @@
 {
     "cmake.configureArgs": [
-        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        "-DMSG_ROUNDTRIP_TIME=ON",
+        "-DCMAKE_INSTALL_PREFIX=/usr"
     ],
     "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "newLine",
     "C_Cpp.vcFormat.newLine.beforeOpenBrace.block": "newLine",

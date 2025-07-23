@@ -1,90 +1,92 @@
 {
-   // Use IntelliSense to learn about possible attributes.
-   // Hover to view descriptions of existing attributes.
-   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-   "version": "0.2.0",
-   "configurations": [
-      {
-         "name": "rbuscli - linux",
-         "type": "cppdbg",
-         "request": "launch",
-         "program": "${workspaceFolder}/build/bin/rbuscli",
-         "args": [
-            "-i"
-         ],
-         "stopAtEntry": false,
-         "cwd": "${workspaceFolder}",
-         "environment": [],
-         "externalConsole": false,
-         "MIMode": "gdb",
-         "setupCommands": [
-            {
-               "description": "Enable pretty-printing for gdb",
-               "text": "-enable-pretty-printing",
-               "ignoreFailures": true
-            },
-            {
-               "description": "Set Disassembly Flavor to Intel",
-               "text": "-gdb-set disassembly-flavor intel",
-               "ignoreFailures": true
-            }
-         ]
-      },
-      {
-         "name": "rbuscli - macos",
-         "type": "cppdbg",
-         "request": "launch",
-         "program": "${workspaceFolder}/build/bin/rbuscli",
-         "args": [
-            "-i"
-         ],
-         "stopAtEntry": false,
-         "cwd": "${workspaceFolder}",
-         "environment": [],
-         "externalConsole": true,
-         "MIMode": "lldb"
-      },
-      {
-         "name": "rtrouted - linux",
-         "type": "cppdbg",
-         "request": "launch",
-         "program": "${workspaceFolder}/build/bin/rtrouted",
-         "args": [
-            "-f",
-            "-ldebug"
-         ],
-         "stopAtEntry": false,
-         "cwd": "${workspaceFolder}",
-         "environment": [],
-         "externalConsole": false,
-         "MIMode": "gdb",
-         "setupCommands": [
-            {
-               "description": "Enable pretty-printing for gdb",
-               "text": "-enable-pretty-printing",
-               "ignoreFailures": true
-            },
-            {
-               "description": "Set Disassembly Flavor to Intel",
-               "text": "-gdb-set disassembly-flavor intel",
-               "ignoreFailures": true
-            }
-         ]
-      },
-      {
-         "name": "rtrouted - macos",
-         "type": "cppdbg",
-         "request": "launch",
-         "program": "${workspaceFolder}/build/bin/rtrouted",
-         "args": [
-            "-f",
-            "-ldebug"
-         ],
-         "stopAtEntry": false,
-         "cwd": "${workspaceFolder}",
-         "environment": [],
-         "externalConsole": false,
-         "MIMode": "lldb"
-      }
-   ]
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "rbuscli - linux",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/rbuscli",
+            "args": [
+                "-i"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "rbuscli - macos",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/rbuscli",
+            "args": [
+                "-i"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "rtrouted - linux",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/rtmessage/rtrouted",
+            "args": [
+                "-f",
+                "-lwarn"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "clean-files",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "rtrouted - macos",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/rtmessage/rtrouted",
+            "args": [
+                "-f",
+                "-lwarn"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "preLaunchTask": "clean-files",
+            "MIMode": "lldb"
+        }
+    ]
 }
