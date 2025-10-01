@@ -58,7 +58,11 @@ char const* ConvertPath(char const* path)
         if(!p2)
             return p1;
         p2++;
-        strncpy(buff, p1, p2-p1);
+        {
+            size_t seglen = (size_t)(p2 - p1);
+            memcpy(buff, p1, seglen);
+            buff[seglen] = '\0';
+        }
         buff[p2-p1] = 0;
         inst = rtHashMap_Get(gContextMaps.alias, buff);
         if(inst)

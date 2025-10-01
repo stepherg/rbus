@@ -37,6 +37,7 @@
 #include "rbus_log.h"
 #include "rbus_handle.h"
 #include "rbus_message.h"
+#include "rtStringUtils.h"
 
 //******************************* MACROS *****************************************//
 #define UNUSED1(a)              (void)(a)
@@ -2286,9 +2287,11 @@ static void _get_parameter_names_handler (rbusHandle_t handle, rbusMessage reque
                 }
                 else
                 {
-                    size_t len = endName - name;
-                    strncpy(propertyName, name, len);
-                    propertyName[len] = 0;
+                    size_t len = (size_t)(endName - name);
+                    if(len >= sizeof(propertyName))
+                        len = sizeof(propertyName)-1;
+                    memcpy(propertyName, name, len);
+                    propertyName[len] = '\0';
                 }
                 if(recurse 
                 || !rtList_HasItem(namesList, propertyName, rtList_Compare_String))
@@ -2757,7 +2760,13 @@ static void _create_direct_connection_callback_handler (rbusHandle_t handle, rbu
             }
             else
             {
-                strncpy(ip, consumerToBrokerConf, (p - consumerToBrokerConf));
+                {
+                    size_t seglen = (size_t)(p - consumerToBrokerConf);
+                    if(seglen >= sizeof(ip))
+                        seglen = sizeof(ip)-1;
+                    memcpy(ip, consumerToBrokerConf, seglen);
+                    ip[seglen] = '\0';
+                }
                 RBUSLOG_DEBUG ("parsing ip address:%s", ip);
             
                 //FIXME :: The port must be within 65535 and unique to the consumer.
@@ -6479,8 +6488,7 @@ rbusError_t rbusHandle_GetTraceContextAsString(
         if (s)
         {
             n = RBUS_MIN( (int) strlen(s), traceParentLength - 1 );
-            strncpy(traceParent, s, n);
-            traceParent[n] ='\0';
+            rt_strlcpy(traceParent, s, (size_t)traceParentLength);
         }
         else
             traceParent[0] = '\0';
@@ -6491,8 +6499,7 @@ rbusError_t rbusHandle_GetTraceContextAsString(
         if (t)
         {
             n = RBUS_MIN( (int) strlen(t), traceStateLength - 1);
-            strncpy(traceState, t, n);
-            traceState[n] = '\0';
+            rt_strlcpy(traceState, t, (size_t)traceStateLength);
         }
         else
             traceState[0] = '\0';

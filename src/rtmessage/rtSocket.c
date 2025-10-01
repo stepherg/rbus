@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include "rtStringUtils.h"
 
 int
 rtSocket_IsNumeric(char const* s)
@@ -66,7 +67,7 @@ rtSocket_InterfaceNameToAddress(char const* s, char* t, int n)
 
   memset(&req, 0, sizeof(req));
   req.ifr_addr.sa_family = AF_INET;
-  strncpy(req.ifr_name, s, IFNAMSIZ - 1);
+  rt_strlcpy(req.ifr_name, s, IFNAMSIZ);
 
   ret = ioctl(soc, SIOCGIFADDR, &req);
   if (ret)
@@ -78,7 +79,7 @@ rtSocket_InterfaceNameToAddress(char const* s, char* t, int n)
   close(soc);
 
   sin = (struct sockaddr_in *) &req.ifr_addr;
-  strncpy(t, inet_ntoa(sin->sin_addr), n);
+  rt_strlcpy(t, inet_ntoa(sin->sin_addr), (size_t)n);
   return RT_OK;
 }
 
@@ -176,7 +177,12 @@ rtSocketStorage_FromString(struct sockaddr_storage* ss, char const* addr)
   {
     struct sockaddr_un* un = (struct sockaddr_un*) ss;
     un->sun_family = AF_UNIX;
-    strncpy(un->sun_path, addr + 7, (sizeof(un->sun_path)-1));
+    {
+      size_t maxc = sizeof(un->sun_path) - 1;
+      size_t ncpy = strnlen(addr + 7, maxc);
+      memcpy(un->sun_path, addr + 7, ncpy);
+      un->sun_path[ncpy] = '\0';
+    }
     //chmod(un->sun_path, S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
 
     return RT_OK;
@@ -196,7 +202,13 @@ rtSocketStorage_FromString(struct sockaddr_storage* ss, char const* addr)
     return RT_ERROR_INVALID_ARG;
   }
 
-  strncpy(ip, addr+6, (p-addr-6));
+  {
+    size_t seglen = (size_t)(p - addr - 6);
+    if(seglen >= sizeof(ip))
+      seglen = sizeof(ip)-1;
+    memcpy(ip, addr+6, seglen);
+    ip[seglen] = '\0';
+  }
   rtLog_Debug("parsing ip address:%s", ip);
   if (!rtSocket_IsNumeric(ip))
   {

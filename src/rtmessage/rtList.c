@@ -589,11 +589,11 @@ int main(int argc, char* argv[])
   /*exercise reusability*/
   printf("testing reusability\n"); 
   rtList_Create(&list);
-  sdata = rt_malloc(10); strncpy(sdata, "one", 10);
+  sdata = rt_malloc(10); memcpy(sdata, "one", 4); /* includes NUL */
   rtList_PushBack(list, sdata, &items[0]);
-  sdata = rt_malloc(10); strncpy(sdata, "two", 10);
+  sdata = rt_malloc(10); memcpy(sdata, "two", 4);
   rtList_PushBack(list, sdata, &items[1]);
-  sdata = rt_malloc(10); strncpy(sdata, "three", 10);
+  sdata = rt_malloc(10); memcpy(sdata, "three", 6);
   rtList_PushBack(list, sdata, &items[2]);
   printf("list should contain one, two, three. free list empty\n");
   printListString(list);
@@ -631,7 +631,11 @@ int main(int argc, char* argv[])
       rtListItem_SetData(items[i], data);
     }
     snprintf(buff, 10, "item %d", i);
-    strncpy((char*)data, buff, 10);
+    {
+      size_t copyLen = strnlen(buff, 9);
+      memcpy((char*)data, buff, copyLen);
+      ((char*)data)[copyLen] = '\0';
+    }
   }
   printListString(list);
   rtList_Destroy(list, freeString);

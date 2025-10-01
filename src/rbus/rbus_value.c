@@ -311,7 +311,8 @@ char* rbusValue_ToString(rbusValue_t v, char* buf, size_t buflen)
     switch(v->type)
     {
     case RBUS_STRING:
-        strncpy(p, (char const* ) v->d.bytes->data, n);
+    memcpy(p, (char const* ) v->d.bytes->data, n);
+    p[n] = '\0';
         break;
     case RBUS_BYTES:
     {

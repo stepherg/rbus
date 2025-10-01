@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include "rtStringUtils.h"
 #include <stdbool.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -2413,7 +2414,7 @@ void rbus_setOpenTelemetryContext(const char *traceParent, const char *traceStat
 	if ((tpLen > 0) && (tpLen < (RBUS_OPEN_TELEMETRY_DATA_MAX - 1)))
 	{
             memset(ot_ctx->otTraceParent, '\0', sizeof(ot_ctx->otTraceParent));
-	    strncpy(ot_ctx->otTraceParent, traceParent, tpLen);
+        rt_strlcpy(ot_ctx->otTraceParent, traceParent, RBUS_OPEN_TELEMETRY_DATA_MAX);
             ot_ctx->otTraceParent[tpLen + 1] = '\0';
 	}
 	else
@@ -2428,7 +2429,7 @@ void rbus_setOpenTelemetryContext(const char *traceParent, const char *traceStat
 	if ((tsLen > 0) && (tsLen < (RBUS_OPEN_TELEMETRY_DATA_MAX - 1)))
 	{
             memset(ot_ctx->otTraceState, '\0', sizeof(ot_ctx->otTraceState));
-	    strncpy(ot_ctx->otTraceState, traceState, tsLen);
+        rt_strlcpy(ot_ctx->otTraceState, traceState, RBUS_OPEN_TELEMETRY_DATA_MAX);
             ot_ctx->otTraceState[tsLen + 1] = '\0';
 	}
 	else
