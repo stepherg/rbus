@@ -1,0 +1,97 @@
+name: Build Debian Packages
+
+on:
+  push:
+    branches:
+      - macos
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches:
+      - macos
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  id-token: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }} deb
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    env:
+      BUILD_TYPE: Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up cross build prerequisites (arm64)
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-arm64 gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Install dependencies (common + host or target)
+        run: |
+          sudo apt-get update
+          # Libraries needed at build & runtime; adjust if project adds more
+          if [ "${{ matrix.arch }}" = "amd64" ]; then
+            sudo apt-get install -y build-essential cmake pkg-config libmsgpackc2 libmsgpack-dev libcjson-dev
+            sudo apt-get install -y git
+          else
+            sudo apt-get install -y cmake pkg-config git
+            # Install target libs for arm64 rootfs (headers & libs)
+            sudo apt-get install -y libmsgpackc2:arm64 libmsgpack-dev:arm64 libcjson-dev:arm64
+          fi
+
+      - name: Configure (CMake)
+        run: |
+          mkdir -p build
+          cd build
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+                  -DCMAKE_SYSTEM_NAME=Linux \
+                  -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+                  -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+                  -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+                  -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+                  -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+                  -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+                  -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
+                  ..
+          else
+            cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ..
+          fi
+
+      - name: Build
+        run: cmake --build build --config ${BUILD_TYPE} -- -j$(nproc)
+
+      - name: Package (.deb via CPack)
+        run: |
+          cd build
+          cpack -G DEB
+          ls -l *.deb || ls -l
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rbus-${{ matrix.arch }}-deb
+          path: build/*.deb
+          if-no-files-found: error
+
+  summary:
+    name: Summarize artifacts
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: List artifacts
+        run: echo "Built debs for amd64 and arm64."

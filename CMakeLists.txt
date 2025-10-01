@@ -274,3 +274,34 @@ endif()
 if (ENABLE_UNIT_TESTING)
     add_subdirectory(unittests)
 endif()
+
+# ---------------------------------------------------------------------------
+# CPack packaging configuration (Debian packages)
+# ---------------------------------------------------------------------------
+# This section enables generation of .deb packages via:
+#   mkdir build && cd build
+#   cmake -DCMAKE_BUILD_TYPE=Release ..
+#   cpack -G DEB
+# Output .deb file(s) will appear in the build directory.
+
+set(CPACK_PACKAGE_NAME "rbus")
+set(CPACK_PACKAGE_VENDOR "RDK Management")
+set(CPACK_PACKAGE_CONTACT "RDK Management <rdk@rdkcentral.com>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "rbus core libraries and utilities")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
+set(CPACK_DEBIAN_COMPRESSION_TYPE "xz")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+
+# Map CMake architecture names to Debian architecture names when possible.
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE arm64)
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+  set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE arm64)
+endif()
+
+set(CPACK_GENERATOR "DEB")
+
+include(CPack)
