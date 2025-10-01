@@ -53,6 +53,23 @@ jobs:
             sudo apt-get install -y libmsgpackc2:arm64 libmsgpack-dev:arm64 libcjson-dev:arm64
           fi
 
+      - name: Build & install linenoise (${{ matrix.arch }})
+        run: |
+          set -e
+          git clone https://github.com/antirez/linenoise.git /tmp/linenoise-src
+          pushd /tmp/linenoise-src
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            aarch64-linux-gnu-gcc -fPIC -shared -rdynamic -o liblinenoise.so linenoise.c
+            sudo install -m 0644 linenoise.h /usr/include/
+            sudo install -m 0755 liblinenoise.so /usr/lib/aarch64-linux-gnu/
+          else
+            cc -fPIC -shared -rdynamic -o liblinenoise.so linenoise.c
+            sudo install -m 0644 linenoise.h /usr/include/
+            sudo install -m 0755 liblinenoise.so /usr/lib/
+          fi
+          popd
+          ls -l /usr/lib*/liblinenoise.so || true
+
       - name: Configure (CMake)
         run: |
           mkdir -p build
@@ -63,13 +80,14 @@ jobs:
                   -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
                   -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
                   -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+                  -DMSG_ROUNDTRIP_TIME=ON \
                   -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
                   -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
                   -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
                   -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
                   ..
           else
-            cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ..
+            cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DMSG_ROUNDTRIP_TIME=ON ..
           fi
 
       - name: Build

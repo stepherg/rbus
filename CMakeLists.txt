@@ -276,6 +276,30 @@ if (ENABLE_UNIT_TESTING)
 endif()
 
 # ---------------------------------------------------------------------------
+# Systemd service installation
+# ---------------------------------------------------------------------------
+if (UNIX AND NOT APPLE)
+  # Allow overriding the install location for systemd units. Common values:
+  #  - /usr/lib/systemd/system (modern distributions like Fedora, Ubuntu >= 22.04)
+  #  - /lib/systemd/system (legacy / Debian style)
+  # The user can pass -DRBUS_SYSTEMD_UNIT_DIR=/lib/systemd/system to override.
+  set(RBUS_SYSTEMD_UNIT_DIR "" CACHE PATH "Destination directory for systemd unit files (without trailing slash)")
+  if (NOT RBUS_SYSTEMD_UNIT_DIR)
+    if (EXISTS "/usr/lib/systemd/system")
+      set(RBUS_SYSTEMD_UNIT_DIR "/usr/lib/systemd/system")
+    elseif (EXISTS "/lib/systemd/system")
+      set(RBUS_SYSTEMD_UNIT_DIR "/lib/systemd/system")
+    else()
+      # Fallback to /usr/lib/systemd/system
+      set(RBUS_SYSTEMD_UNIT_DIR "/usr/lib/systemd/system")
+    endif()
+  endif()
+  message(STATUS "Installing rbus.service to ${RBUS_SYSTEMD_UNIT_DIR}")
+  install(FILES ${CMAKE_SOURCE_DIR}/conf/rbus.service
+      DESTINATION ${RBUS_SYSTEMD_UNIT_DIR})
+endif()
+
+# ---------------------------------------------------------------------------
 # CPack packaging configuration (Debian packages)
 # ---------------------------------------------------------------------------
 # This section enables generation of .deb packages via:
